@@ -26,7 +26,7 @@ class _AppState extends ConsumerState<App> {
       designSize: Screen.screenSize(context),
       minTextAdapt: true,
       splitScreenMode: true,
-      child: MaterialApp.router(
+      builder: (context, _) => MaterialApp.router(
         debugShowCheckedModeBanner: false,
         routerDelegate: _appRouter.delegate(),
         routeInformationParser: _appRouter.defaultRouteParser(),
