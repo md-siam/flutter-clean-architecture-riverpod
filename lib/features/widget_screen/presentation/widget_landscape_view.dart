@@ -6,6 +6,7 @@ import 'package:flutter_template/shared/theme/text/app_text.dart';
 import 'package:flutter_template/shared/widgets/app_bar/widgets.dart';
 import 'package:flutter_template/shared/widgets/buttons/_primary_button.dart';
 import 'package:flutter_template/shared/widgets/custom_bottom_modal_sheet/bottom_sheet.dart';
+import 'package:flutter_template/shared/widgets/dashboard_drawer/drawer_menu_button.dart';
 import 'package:flutter_template/shared/widgets/dialog/dialog.dart';
 import 'package:flutter_template/shared/widgets/input_widget/widgets.dart';
 import 'package:flutter_template/shared/widgets/others/widgets.dart';
@@ -26,7 +27,10 @@ class _WidgetsLandscapeViewState extends State<WidgetsLandscapeView> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      appBar: CustomAppBar(title: l10n.galleryTitle),
+      appBar: CustomAppBar(
+        title: l10n.galleryTitle,
+        leading: const DrawerMenuButton(),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(

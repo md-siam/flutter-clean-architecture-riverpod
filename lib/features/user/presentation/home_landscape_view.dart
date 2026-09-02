@@ -4,6 +4,7 @@ import 'package:flutter_template/features/user/presentation/components/user_list
 import 'package:flutter_template/l10n/l10n.dart';
 import 'package:flutter_template/shared/theme/base/theme_extension.dart';
 import 'package:flutter_template/shared/theme/text/app_text.dart';
+import 'package:flutter_template/shared/widgets/dashboard_drawer/drawer_menu_button.dart';
 import 'package:gap/gap.dart';
 
 class HomeLandscapeView extends StatelessWidget {
@@ -16,6 +17,7 @@ class HomeLandscapeView extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.background,
       appBar: AppBar(
+        leading: const DrawerMenuButton(),
         title: AppText.titleLarge(
           context.l10n.appName,
           style: context.textStyle.titleLarge.copyWith(
