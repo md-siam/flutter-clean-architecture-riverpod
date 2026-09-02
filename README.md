@@ -86,29 +86,31 @@ abstract class UserRepository {
 Manages data-related operations, including storage and communication with external sources.
 
 **Data Source**
-Origins of data (e.g., APIs via Retrofit).
+Origins of data (e.g., APIs via Retrofit), implementing this feature's data source interface. The `@RestApi` class itself is `part of` the shared `shared/base/base_data_source.dart` aggregator rather than a standalone library — see the Architecture note in `CLAUDE.md`.
 ```dart
 @RestApi()
-abstract class UserRemoteDataSource {
+abstract class UserRemoteDataSource implements UserDataSource {
   factory UserRemoteDataSource(Dio dio) = _UserRemoteDataSource;
 
+  @override
   @GET('/users')
   Future<List<UserResponseModel>> getUserList();
 }
 ```
 
 **Repository Implementation**
-Implements the domain repository interface and handles data mapping.
+Implements the domain repository interface and handles data mapping. Data sources are obtained through the `DataSourceFactory` abstract factory rather than injected directly, so the repository never knows whether it's talking to a mock or the real backend (see [§4 Dependency Injection](#4-dependency-injection-riverpod_generator)):
 ```dart
 class UserRepositoryImpl extends UserRepository {
-  UserRepositoryImpl(this._remoteDataSource);
+  UserRepositoryImpl(DataSourceFactory factory)
+    : _userDataSource = factory.createUserDataSource();
 
-  final UserRemoteDataSource _remoteDataSource;
+  final UserDataSource _userDataSource;
 
   @override
   Future<List<UserEntity>> getUserList() async {
-    final userList = await _remoteDataSource.getUserList();
-    return userList.toUserEntities();
+    final response = await _userDataSource.getUserList();
+    return response.toUserEntities();
   }
 }
 ```
@@ -118,16 +120,20 @@ Data structures for API responses and extensions to map them to domain entities.
 ```dart
 extension UserResponseMapper on List<UserResponseModel> {
   List<UserEntity> toUserEntities() {
-    return map(
-      (userResponse) => UserEntity(
-        name: userResponse.name ?? '',
-        email: userResponse.email ?? '',
-        address: userResponse.address?.street ?? '',
-        city: userResponse.address?.city ?? '',
-        latitude: double.parse(userResponse.address?.geo?.lat ?? '0'),
-        longitude: double.parse(userResponse.address?.geo?.lng ?? '0'),
-      ),
-    ).toList();
+    return map((userResponse) => userResponse.toUserEntity()).toList();
+  }
+}
+
+extension UserResponseItemMapper on UserResponseModel {
+  UserEntity toUserEntity() {
+    return UserEntity(
+      name: name ?? '',
+      email: email ?? '',
+      address: address?.street ?? '',
+      city: address?.city ?? '',
+      latitude: double.parse(address?.geo?.lat ?? '0'),
+      longitude: double.parse(address?.geo?.lng ?? '0'),
+    );
   }
 }
 ```
@@ -220,16 +226,25 @@ chmod +x ./setup.sh
 
 ## 7. Testing
 
-Unit tests live under `test/`, mirroring the `lib/` layer structure so each
-layer is verified in isolation by mocking the layer beneath it — exactly what
-the Clean Architecture boundaries are designed to enable.
+Unit tests live under `test/`, mirroring the `lib/` feature-first structure so
+each layer is verified in isolation by mocking the layer beneath it — exactly
+what the Clean Architecture boundaries are designed to enable.
 
 ```
 test/
-├── core/error/            # ResponseError mapping & hardening
-├── data/repository_impl/  # repositories (mocked DataSourceFactory + data sources)
-├── domain/use_cases/      # use cases (mocked repositories)
-└── presentation/          # notifiers (mocked use case providers)
+├── core/                          # cross-cutting: error mapping, device status, ...
+├── shared/                        # cross-cutting notifiers (theme, locale)
+└── features/
+    ├── auth/
+    │   ├── data/repository_impl/      # repositories (mocked DataSourceFactory + data sources)
+    │   ├── domain/use_cases/          # use cases (mocked repositories)
+    │   └── presentation/notifier/     # notifiers (mocked use case providers)
+    ├── user/
+    │   ├── data/repository_impl/
+    │   ├── domain/use_cases/
+    │   └── presentation/notifier/
+    └── dashboard/
+        └── presentation/notifier/
 ```
 
 The suite uses [`flutter_test`](https://docs.flutter.dev/testing) +
@@ -243,7 +258,7 @@ graph is touched — every collaborator is mocked.
 flutter test
 
 # A single file
-flutter test test/presentation/user_notifier_test.dart
+flutter test test/features/user/presentation/notifier/user_notifier_test.dart
 
 # By name
 flutter test --plain-name "maps response models to domain entities"

@@ -37,20 +37,23 @@ insert_before() {
   ' "$file" > "$file.tmp.$$" && mv "$file.tmp.$$" "$file"
 }
 
-
 # ---------------------------
-# Paths
+# Paths — feature-first, layers-inside: everything about this feature lives
+# under lib/features/$FEATURE_SNAKE/{domain,data,presentation}. See the
+# "Architecture" section of CLAUDE.md.
 # ---------------------------
-DOMAIN_ENTITY_DIR="lib/domain/entity/$FEATURE_SNAKE"
-DOMAIN_REPO_DIR="lib/domain/repository/$FEATURE_SNAKE"
-DOMAIN_USECASE_DIR="lib/domain/use_cases/$FEATURE_SNAKE"
+FEATURE_DIR="lib/features/$FEATURE_SNAKE"
 
-DATA_MODEL_DIR="lib/data/models/response_model/$FEATURE_SNAKE"
-DATA_REPO_IMPL_DIR="lib/data/repository_impl/$FEATURE_SNAKE"
-DATA_REMAPPER_DIR="lib/data/remapper/$FEATURE_SNAKE"
-DATA_DS_DIR="lib/data/data_source/$FEATURE_SNAKE"
+DOMAIN_ENTITY_DIR="$FEATURE_DIR/domain/entity"
+DOMAIN_REPO_DIR="$FEATURE_DIR/domain/repository"
+DOMAIN_USECASE_DIR="$FEATURE_DIR/domain/use_cases"
 
-PRESENTATION_DIR="lib/presentation/screen/$FEATURE_SNAKE"
+DATA_MODEL_DIR="$FEATURE_DIR/data/models"
+DATA_REPO_IMPL_DIR="$FEATURE_DIR/data/repository_impl"
+DATA_REMAPPER_DIR="$FEATURE_DIR/data/remapper"
+DATA_DS_DIR="$FEATURE_DIR/data/data_source"
+
+PRESENTATION_DIR="$FEATURE_DIR/presentation"
 NOTIFIER_DIR="$PRESENTATION_DIR/notifier"
 COMPONENTS_DIR="$PRESENTATION_DIR/components"
 
@@ -64,8 +67,8 @@ DOMAIN_USECASE_FILE="$DOMAIN_USECASE_DIR/get_${FEATURE_SNAKE}_usecase.dart"
 DATA_MODEL_FILE="$DATA_MODEL_DIR/${FEATURE_SNAKE}_model.dart"
 DATA_REPO_IMPL_FILE="$DATA_REPO_IMPL_DIR/${FEATURE_SNAKE}_repository_impl.dart"
 DATA_REMAPPER_FILE="$DATA_REMAPPER_DIR/${FEATURE_SNAKE}_remapper.dart"
-DATA_REMOTE_DS_FILE="$DATA_DS_DIR/${FEATURE_SNAKE}_remote_data_source.dart"
-DATA_LOCAL_DS_FILE="$DATA_DS_DIR/${FEATURE_SNAKE}_local_data_source.dart"
+DATA_REMOTE_DS_FILE="$DATA_DS_DIR/remote/${FEATURE_SNAKE}_remote_data_source.dart"
+DATA_LOCAL_DS_FILE="$DATA_DS_DIR/local/${FEATURE_SNAKE}_local_data_source.dart"
 
 NOTIFIER_FILE="$NOTIFIER_DIR/${FEATURE_SNAKE}_notifier.dart"
 STATE_FILE="$NOTIFIER_DIR/${FEATURE_SNAKE}_state.dart"
@@ -75,19 +78,27 @@ PORTRAIT_VIEW_FILE="$PRESENTATION_DIR/${FEATURE_SNAKE}_portrait_view.dart"
 LANDSCAPE_VIEW_FILE="$PRESENTATION_DIR/${FEATURE_SNAKE}_landscape_view.dart"
 LIST_VIEW_FILE="$COMPONENTS_DIR/${FEATURE_SNAKE}_list_view.dart"
 
+# Package import prefix — every import below is absolute
+# (package:flutter_template/...) rather than relative. That matches the rest
+# of the codebase and sidesteps recalculating relative-path depth by hand.
+PKG="package:flutter_template"
+
 # ---------------------------
 # Create directories
 # ---------------------------
 mkdir -p "$DOMAIN_ENTITY_DIR" "$DOMAIN_REPO_DIR" "$DOMAIN_USECASE_DIR"
-mkdir -p "$DATA_MODEL_DIR" "$DATA_REPO_IMPL_DIR" "$DATA_REMAPPER_DIR" "$DATA_DS_DIR"
+mkdir -p "$DATA_MODEL_DIR" "$DATA_REPO_IMPL_DIR" "$DATA_REMAPPER_DIR" "$DATA_DS_DIR/remote" "$DATA_DS_DIR/local"
 mkdir -p "$NOTIFIER_DIR"
 mkdir -p "$PRESENTATION_DIR" "$COMPONENTS_DIR"
+mkdir -p lib/shared/base
 
 # ---------------------------
-# Domain Entity
+# Domain Entity — `part of` the shared lib/shared/base/base_entity.dart
+# aggregator, so freezed emits one base_entity.freezed.dart there instead of
+# a generated file per feature. See lib/shared/base/base_entity.dart.
 # ---------------------------
 cat <<EOF > "$DOMAIN_ENTITY_FILE"
-part of '../base/base_entity.dart';
+part of '$PKG/shared/base/base_entity.dart';
 
 @freezed
 abstract class ${ENTITY_CAMEL}Entity with _\$${ENTITY_CAMEL}Entity {
@@ -99,12 +110,19 @@ abstract class ${ENTITY_CAMEL}Entity with _\$${ENTITY_CAMEL}Entity {
 EOF
 
 # ---------------------------
-# Add entity part to base_entity.dart
+# Wire the entity into the shared base_entity.dart aggregator
 # ---------------------------
-BASE_ENTITY_FILE="lib/domain/entity/base/base_entity.dart"
-ENTITY_PART_LINE="part '../$FEATURE_SNAKE/${FEATURE_SNAKE}_entity.dart';"
+BASE_ENTITY_FILE="lib/shared/base/base_entity.dart"
+if [ ! -f "$BASE_ENTITY_FILE" ]; then
+  cat <<EOF > "$BASE_ENTITY_FILE"
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'base_entity.freezed.dart';
+EOF
+fi
+ENTITY_PART_LINE="part '$PKG/features/$FEATURE_SNAKE/domain/entity/${FEATURE_SNAKE}_entity.dart';"
 if ! grep -Fxq "$ENTITY_PART_LINE" "$BASE_ENTITY_FILE"; then
-  insert_before "part '.*\\.freezed\\.dart';" "$ENTITY_PART_LINE" "$BASE_ENTITY_FILE"
+  insert_before "part 'base_entity\\.freezed\\.dart';" "$ENTITY_PART_LINE" "$BASE_ENTITY_FILE"
   echo "Added $ENTITY_PART_LINE to base_entity.dart"
 fi
 
@@ -112,7 +130,7 @@ fi
 # Domain Repository
 # ---------------------------
 cat <<EOF > "$DOMAIN_REPO_FILE"
-import '../../entity/base/base_entity.dart';
+import '$PKG/shared/base/base_entity.dart';
 
 abstract class ${ENTITY_CAMEL}Repository {
   Future<List<${ENTITY_CAMEL}Entity>> getAll();
@@ -124,8 +142,8 @@ EOF
 # Domain UseCase
 # ---------------------------
 cat <<EOF > "$DOMAIN_USECASE_FILE"
-import '../../entity/base/base_entity.dart';
-import '../../repository/$FEATURE_SNAKE/${FEATURE_SNAKE}_repository.dart';
+import '$PKG/shared/base/base_entity.dart';
+import '$PKG/features/$FEATURE_SNAKE/domain/repository/${FEATURE_SNAKE}_repository.dart';
 
 class Get${ENTITY_CAMEL}UseCase {
   final ${ENTITY_CAMEL}Repository repository;
@@ -139,10 +157,12 @@ class Get${ENTITY_CAMEL}UseCase {
 EOF
 
 # ---------------------------
-# Data Model (Freezed)
+# Data Model (Freezed) — `part of` the shared lib/shared/base/base_response.dart
+# aggregator, so json_serializable/freezed emit one pair of generated files
+# there instead of one per feature. See lib/shared/base/base_response.dart.
 # ---------------------------
 cat <<EOF > "$DATA_MODEL_FILE"
-part of '../base/base_response.dart';
+part of '$PKG/shared/base/base_response.dart';
 
 @freezed
 abstract class ${ENTITY_CAMEL}ResponseModel with _\$${ENTITY_CAMEL}ResponseModel {
@@ -158,12 +178,20 @@ abstract class ${ENTITY_CAMEL}ResponseModel with _\$${ENTITY_CAMEL}ResponseModel
 EOF
 
 # ---------------------------
-# Add model part to base_response.dart
+# Wire the model into the shared base_response.dart aggregator
 # ---------------------------
-BASE_RESPONSE_FILE="lib/data/models/response_model/base/base_response.dart"
-MODEL_PART_LINE="part '../$FEATURE_SNAKE/${FEATURE_SNAKE}_model.dart';"
+BASE_RESPONSE_FILE="lib/shared/base/base_response.dart"
+if [ ! -f "$BASE_RESPONSE_FILE" ]; then
+  cat <<EOF > "$BASE_RESPONSE_FILE"
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'base_response.freezed.dart';
+part 'base_response.g.dart';
+EOF
+fi
+MODEL_PART_LINE="part '$PKG/features/$FEATURE_SNAKE/data/models/${FEATURE_SNAKE}_model.dart';"
 if ! grep -Fxq "$MODEL_PART_LINE" "$BASE_RESPONSE_FILE"; then
-  insert_before "part '.*\\.freezed\\.dart';" "$MODEL_PART_LINE" "$BASE_RESPONSE_FILE"
+  insert_before "part 'base_response\\.freezed\\.dart';" "$MODEL_PART_LINE" "$BASE_RESPONSE_FILE"
   echo "Added $MODEL_PART_LINE to base_response.dart"
 fi
 
@@ -171,11 +199,11 @@ fi
 # Repository Implementation
 # ---------------------------
 cat <<EOF > "$DATA_REPO_IMPL_FILE"
-import '../../../domain/entity/base/base_entity.dart';
-import '../../../domain/repository/$FEATURE_SNAKE/${FEATURE_SNAKE}_repository.dart';
-import '../../data_source/$FEATURE_SNAKE/${FEATURE_SNAKE}_local_data_source.dart';
-import '../../data_source/$FEATURE_SNAKE/${FEATURE_SNAKE}_remote_data_source.dart';
-import '../../remapper/$FEATURE_SNAKE/${FEATURE_SNAKE}_remapper.dart';
+import '$PKG/features/$FEATURE_SNAKE/data/data_source/local/${FEATURE_SNAKE}_local_data_source.dart';
+import '$PKG/features/$FEATURE_SNAKE/data/remapper/${FEATURE_SNAKE}_remapper.dart';
+import '$PKG/shared/base/base_data_source.dart';
+import '$PKG/shared/base/base_entity.dart';
+import '$PKG/features/$FEATURE_SNAKE/domain/repository/${FEATURE_SNAKE}_repository.dart';
 
 class ${ENTITY_CAMEL}RepositoryImpl implements ${ENTITY_CAMEL}Repository {
   final ${ENTITY_CAMEL}RemoteDataSource remoteDataSource;
@@ -202,8 +230,8 @@ EOF
 # Remapper
 # ---------------------------
 cat <<EOF > "$DATA_REMAPPER_FILE"
-import '../../../domain/entity/base/base_entity.dart';
-import '../../models/response_model/base/base_response.dart';
+import '$PKG/shared/base/base_response.dart';
+import '$PKG/shared/base/base_entity.dart';
 
 extension ${ENTITY_CAMEL}Mapper on ${ENTITY_CAMEL}ResponseModel {
   ${ENTITY_CAMEL}Entity toEntity() => ${ENTITY_CAMEL}Entity(id: id, title: title);
@@ -215,13 +243,12 @@ extension ${ENTITY_CAMEL}ListMapper on List<${ENTITY_CAMEL}ResponseModel> {
 EOF
 
 # ---------------------------
-# Remote Data Source
+# Remote Data Source — `part of` the shared lib/shared/base/base_data_source.dart
+# aggregator, so retrofit emits one base_data_source.g.dart there instead of
+# one generated file per feature. See lib/shared/base/base_data_source.dart.
 # ---------------------------
 cat <<EOF > "$DATA_REMOTE_DS_FILE"
-import 'package:dio/dio.dart';
-import 'package:retrofit/retrofit.dart';
-import '../../models/response_model/base/base_response.dart';
-part '${FEATURE_SNAKE}_remote_data_source.g.dart';
+part of '$PKG/shared/base/base_data_source.dart';
 
 @RestApi()
 abstract class ${ENTITY_CAMEL}RemoteDataSource {
@@ -233,10 +260,32 @@ abstract class ${ENTITY_CAMEL}RemoteDataSource {
 EOF
 
 # ---------------------------
+# Wire the remote data source into the shared base_data_source.dart aggregator
+# ---------------------------
+BASE_DATA_SOURCE_FILE="lib/shared/base/base_data_source.dart"
+if [ ! -f "$BASE_DATA_SOURCE_FILE" ]; then
+  cat <<EOF > "$BASE_DATA_SOURCE_FILE"
+import 'package:dio/dio.dart';
+import 'package:retrofit/retrofit.dart';
+import '$PKG/shared/base/base_response.dart';
+
+part 'base_data_source.g.dart';
+EOF
+fi
+DATA_SOURCE_PART_LINE="part '$PKG/features/$FEATURE_SNAKE/data/data_source/remote/${FEATURE_SNAKE}_remote_data_source.dart';"
+if ! grep -Fxq "$DATA_SOURCE_PART_LINE" "$BASE_DATA_SOURCE_FILE"; then
+  insert_before "part 'base_data_source\\.g\\.dart';" "$DATA_SOURCE_PART_LINE" "$BASE_DATA_SOURCE_FILE"
+  echo "Added $DATA_SOURCE_PART_LINE to base_data_source.dart"
+fi
+if ! grep -Fxq "import '$PKG/shared/base/base_response.dart';" "$BASE_DATA_SOURCE_FILE"; then
+  insert_before "^part 'base_data_source\\.g\\.dart';\$" "import '$PKG/shared/base/base_response.dart';" "$BASE_DATA_SOURCE_FILE"
+fi
+
+# ---------------------------
 # Local Data Source
 # ---------------------------
 cat <<EOF > "$DATA_LOCAL_DS_FILE"
-import '../../models/response_model/base/base_response.dart';
+import '$PKG/shared/base/base_response.dart';
 
 class ${ENTITY_CAMEL}LocalDataSource {
   Future<List<${ENTITY_CAMEL}ResponseModel>> fetchCachedData() async {
@@ -252,16 +301,17 @@ EOF
 # ---------------------------
 # Wire the new dependencies into the Riverpod DI graph
 # (core/injector/injected_providers.dart) — imports go above the `part`
-# directive, providers get appended after the "append here" marker.
+# directive, providers get appended after the "append here" marker. This is
+# the one file in the app allowed to import across feature boundaries.
 # ---------------------------
 INJECTED_PROVIDERS_FILE="lib/core/injector/injected_providers.dart"
 
 for IMPORT_LINE in \
-  "import 'package:flutter_template/data/data_source/$FEATURE_SNAKE/${FEATURE_SNAKE}_local_data_source.dart';" \
-  "import 'package:flutter_template/data/data_source/$FEATURE_SNAKE/${FEATURE_SNAKE}_remote_data_source.dart';" \
-  "import 'package:flutter_template/data/repository_impl/$FEATURE_SNAKE/${FEATURE_SNAKE}_repository_impl.dart';" \
-  "import 'package:flutter_template/domain/repository/$FEATURE_SNAKE/${FEATURE_SNAKE}_repository.dart';" \
-  "import 'package:flutter_template/domain/use_cases/$FEATURE_SNAKE/get_${FEATURE_SNAKE}_usecase.dart';"
+  "import '$PKG/features/$FEATURE_SNAKE/data/data_source/local/${FEATURE_SNAKE}_local_data_source.dart';" \
+  "import '$PKG/features/$FEATURE_SNAKE/data/repository_impl/${FEATURE_SNAKE}_repository_impl.dart';" \
+  "import '$PKG/features/$FEATURE_SNAKE/domain/repository/${FEATURE_SNAKE}_repository.dart';" \
+  "import '$PKG/features/$FEATURE_SNAKE/domain/use_cases/get_${FEATURE_SNAKE}_usecase.dart';" \
+  "import '$PKG/shared/base/base_data_source.dart';"
 do
   if ! grep -Fxq "$IMPORT_LINE" "$INJECTED_PROVIDERS_FILE"; then
     insert_before "^part 'injected_providers.g.dart';\$" "$IMPORT_LINE" "$INJECTED_PROVIDERS_FILE"
@@ -298,9 +348,9 @@ fi
 # ---------------------------
 cat <<EOF > "$NOTIFIER_FILE"
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../core/error/response_error.dart';
-import '../../../../core/injector/injected_providers.dart';
-import '../../../../core/state_status/base_status.dart';
+import '$PKG/core/error/response_error.dart';
+import '$PKG/core/injector/injected_providers.dart';
+import '$PKG/core/state_status/base_status.dart';
 import '${FEATURE_SNAKE}_state.dart';
 
 part '${FEATURE_SNAKE}_notifier.g.dart';
@@ -331,8 +381,8 @@ EOF
 # ---------------------------
 cat <<EOF > "$STATE_FILE"
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../../../core/state_status/base_status.dart';
-import '../../../../domain/entity/base/base_entity.dart';
+import '$PKG/core/state_status/base_status.dart';
+import '$PKG/shared/base/base_entity.dart';
 
 part '${FEATURE_SNAKE}_state.freezed.dart';
 
@@ -353,7 +403,7 @@ import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../widgets/widgets.dart';
+import '$PKG/shared/widgets/widgets.dart';
 import 'notifier/${FEATURE_SNAKE}_notifier.dart';
 import '${FEATURE_SNAKE}_landscape_view.dart';
 import '${FEATURE_SNAKE}_portrait_view.dart';
@@ -408,10 +458,10 @@ EOF
 cat <<EOF > "$PORTRAIT_VIEW_FILE"
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../theme/text/app_text.dart';
+import '$PKG/core/state_status/base_status.dart';
+import '$PKG/shared/theme/text/app_text.dart';
 import 'notifier/${FEATURE_SNAKE}_notifier.dart';
 import 'components/${FEATURE_SNAKE}_list_view.dart';
-import '../../../core/state_status/base_status.dart';
 
 class ${ENTITY_CAMEL}PortraitView extends ConsumerWidget {
   const ${ENTITY_CAMEL}PortraitView({super.key});
@@ -442,10 +492,10 @@ EOF
 cat <<EOF > "$LANDSCAPE_VIEW_FILE"
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../theme/text/app_text.dart';
+import '$PKG/core/state_status/base_status.dart';
+import '$PKG/shared/theme/text/app_text.dart';
 import 'notifier/${FEATURE_SNAKE}_notifier.dart';
 import 'components/${FEATURE_SNAKE}_list_view.dart';
-import '../../../core/state_status/base_status.dart';
 
 class ${ENTITY_CAMEL}LandScapeView extends ConsumerWidget {
   const ${ENTITY_CAMEL}LandScapeView({super.key});
@@ -478,7 +528,7 @@ EOF
 # ---------------------------
 cat <<EOF > "$LIST_VIEW_FILE"
 import 'package:flutter/material.dart';
-import '../../../../domain/entity/base/base_entity.dart';
+import '$PKG/shared/base/base_entity.dart';
 
 class ${ENTITY_CAMEL}ListView extends StatelessWidget {
   final List<${ENTITY_CAMEL}Entity> items;
@@ -516,13 +566,13 @@ fi
 # Format the generated files (heredoc line lengths vary with feature name
 # length, so this keeps output consistent regardless of $FEATURE_NAME).
 # ---------------------------
-dart format lib/domain lib/data lib/presentation/screen/$FEATURE_SNAKE lib/core/injector/injected_providers.dart
+dart format "$FEATURE_DIR" lib/core/injector/injected_providers.dart
 
 
 # ---------------------------
 # Add route to app_router.dart
 # ---------------------------
-APP_ROUTER_FILE="lib/presentation/route/app_router.dart"
+APP_ROUTER_FILE="lib/shared/route/app_router.dart"
 ROUTE_LINE="AutoRoute(page: ${ENTITY_CAMEL}Route.page),"
 
 # Insert before the closing bracket of the routes list (the first '];' seen

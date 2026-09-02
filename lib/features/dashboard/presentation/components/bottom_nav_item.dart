@@ -1,0 +1,79 @@
+import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:gap/gap.dart';
+import 'package:flutter_template/core/constants/app_constant.dart';
+import 'package:flutter_template/shared/theme/base/theme_extension.dart';
+import 'package:flutter_template/shared/theme/text/app_text.dart';
+
+class BottomNavItem extends StatelessWidget {
+  const BottomNavItem({
+    super.key,
+    required this.title,
+    required this.onTap,
+    required this.isSelected,
+    required this.group,
+    this.image,
+    this.icon,
+  }) : assert(
+         image != null || icon != null,
+         'Provide either an SVG [image] or an [icon].',
+       );
+
+  final String title;
+  final VoidCallback onTap;
+  final bool isSelected;
+
+  /// SVG asset path. Mutually exclusive with [icon].
+  final String? image;
+
+  /// Material icon. Mutually exclusive with [image].
+  final IconData? icon;
+  final AutoSizeGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.colors;
+    final color = isSelected ? theme.primary : theme.disabled;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppConstant.borderRadius16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.symmetric(vertical: AppConstant.verticalGap8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? theme.primary.withAlpha(23)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppConstant.borderRadius16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (image != null)
+                SvgPicture.asset(
+                  image!,
+                  height: 26.w,
+                  width: 26.w,
+                  colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                )
+              else
+                Icon(icon, size: 26.w, color: color),
+              Gap(AppConstant.verticalGap4),
+              AppText.bodySmall(
+                title,
+                color: color,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
