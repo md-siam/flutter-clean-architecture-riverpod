@@ -6,29 +6,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_template/core/env/app_environment.dart';
 import 'package:flutter_template/core/env/env.dart';
 import 'package:flutter_template/core/helper/secure_storage_service.dart';
-import 'package:flutter_template/data/data_source/auth/mock/auth_mock_data_source.dart';
-import 'package:flutter_template/data/data_source/auth/remote/auth_remote_data_source.dart';
-import 'package:flutter_template/data/data_source/base/auth_interceptor.dart';
-import 'package:flutter_template/data/data_source/base/backend_error_interceptor.dart';
-import 'package:flutter_template/data/data_source/base/factory/data_source_factory.dart';
-import 'package:flutter_template/data/data_source/base/factory/mock_data_source_factory.dart';
-import 'package:flutter_template/data/data_source/base/factory/remote_data_source_factory.dart';
-import 'package:flutter_template/data/data_source/user/local/subscription_local_data_source.dart';
-import 'package:flutter_template/data/data_source/user/local/user_local_data_source.dart';
-import 'package:flutter_template/data/data_source/user/mock/user_mock_data_source.dart';
-import 'package:flutter_template/data/data_source/user/remote/user_remote_data_source.dart';
-import 'package:flutter_template/data/repository_impl/auth/auth_repository_impl.dart';
-import 'package:flutter_template/data/repository_impl/user/subscription_repository_impl.dart';
-import 'package:flutter_template/data/repository_impl/user/user_cache_repository_impl.dart';
-import 'package:flutter_template/data/repository_impl/user/user_repository_impl.dart';
-import 'package:flutter_template/data/repository_impl/user/user_subscription_proxy_repository_impl.dart';
-import 'package:flutter_template/domain/repository/auth/auth_repository.dart';
-import 'package:flutter_template/domain/repository/user/subscription_repository.dart';
-import 'package:flutter_template/domain/repository/user/user_repository.dart';
-import 'package:flutter_template/domain/use_cases/auth/login_use_case.dart';
-import 'package:flutter_template/domain/use_cases/user/get_subscription_status_use_case.dart';
-import 'package:flutter_template/domain/use_cases/user/get_user_list_use_case.dart';
-import 'package:flutter_template/domain/use_cases/user/set_subscription_status_use_case.dart';
+import 'package:flutter_template/shared/base/base_data_source.dart';
+import 'package:flutter_template/features/auth/data/data_source/mock/auth_mock_data_source.dart';
+import 'package:flutter_template/core/interceptor/auth_interceptor.dart';
+import 'package:flutter_template/core/interceptor/backend_error_interceptor.dart';
+import 'package:flutter_template/core/data/factory/data_source_factory.dart';
+import 'package:flutter_template/core/data/factory/mock_data_source_factory.dart';
+import 'package:flutter_template/core/data/factory/remote_data_source_factory.dart';
+import 'package:flutter_template/features/user/data/data_source/local/subscription_local_data_source.dart';
+import 'package:flutter_template/features/user/data/data_source/local/user_local_data_source.dart';
+import 'package:flutter_template/features/user/data/data_source/mock/user_mock_data_source.dart';
+import 'package:flutter_template/features/auth/data/repository_impl/auth_repository_impl.dart';
+import 'package:flutter_template/features/user/data/repository_impl/subscription_repository_impl.dart';
+import 'package:flutter_template/features/user/data/repository_impl/user_cache_repository_impl.dart';
+import 'package:flutter_template/features/user/data/repository_impl/user_repository_impl.dart';
+import 'package:flutter_template/features/user/data/repository_impl/user_subscription_proxy_repository_impl.dart';
+import 'package:flutter_template/features/auth/domain/repository/auth_repository.dart';
+import 'package:flutter_template/features/user/domain/repository/subscription_repository.dart';
+import 'package:flutter_template/features/user/domain/repository/user_repository.dart';
+import 'package:flutter_template/features/auth/domain/use_cases/login_use_case.dart';
+import 'package:flutter_template/features/user/domain/use_cases/get_subscription_status_use_case.dart';
+import 'package:flutter_template/features/user/domain/use_cases/get_user_list_use_case.dart';
+import 'package:flutter_template/features/user/domain/use_cases/set_subscription_status_use_case.dart';
 
 part 'injected_providers.g.dart';
 
@@ -74,7 +73,9 @@ Dio unauthenticatedDio(Ref ref) => _createBaseDio();
 @Riverpod(keepAlive: true)
 Dio authenticatedDio(Ref ref) {
   final dio = _createBaseDio();
-  dio.interceptors.add(AuthInterceptor(ref.watch(secureStorageServiceProvider)));
+  dio.interceptors.add(
+    AuthInterceptor(ref.watch(secureStorageServiceProvider)),
+  );
   return dio;
 }
 
