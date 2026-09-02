@@ -8,6 +8,7 @@ import 'package:flutter_template/core/env/env.dart';
 import 'package:flutter_template/core/helper/secure_storage_service.dart';
 import 'package:flutter_template/data/data_source/auth/mock/auth_mock_data_source.dart';
 import 'package:flutter_template/data/data_source/auth/remote/auth_remote_data_source.dart';
+import 'package:flutter_template/data/data_source/base/auth_interceptor.dart';
 import 'package:flutter_template/data/data_source/base/backend_error_interceptor.dart';
 import 'package:flutter_template/data/data_source/base/factory/data_source_factory.dart';
 import 'package:flutter_template/data/data_source/base/factory/mock_data_source_factory.dart';
@@ -71,7 +72,11 @@ Dio _createBaseDio() {
 Dio unauthenticatedDio(Ref ref) => _createBaseDio();
 
 @Riverpod(keepAlive: true)
-Dio authenticatedDio(Ref ref) => _createBaseDio();
+Dio authenticatedDio(Ref ref) {
+  final dio = _createBaseDio();
+  dio.interceptors.add(AuthInterceptor(ref.watch(secureStorageServiceProvider)));
+  return dio;
+}
 
 @Riverpod(keepAlive: true)
 AuthMockDataSource authMockDataSource(Ref ref) => AuthMockDataSource();
