@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
 import 'package:flutter_template/core/constants/app_constant.dart';
+import 'package:flutter_template/features/user/presentation/components/user_list.dart';
 import 'package:flutter_template/l10n/l10n.dart';
 import 'package:flutter_template/shared/theme/base/theme_extension.dart';
 import 'package:flutter_template/shared/theme/text/app_text.dart';
-import 'package:flutter_template/features/user/presentation/components/user_list.dart';
+import 'package:gap/gap.dart';
 
 class HomeLandscapeView extends StatelessWidget {
   const HomeLandscapeView({super.key});
@@ -85,7 +85,7 @@ class HomeLandscapeView extends StatelessWidget {
             ),
           ),
           VerticalDivider(width: 1, color: theme.border.withAlpha(128)),
-          const Expanded(child: UserList()),
+          const Expanded(child: SafeArea(child: UserList())),
         ],
       ),
     );
