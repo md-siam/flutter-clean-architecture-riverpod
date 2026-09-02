@@ -1,4 +1,4 @@
-import 'package:flutter_template/features/auth/domain/entity/login_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 import 'package:flutter_template/features/auth/domain/repository/auth_repository.dart';
 import 'package:flutter_template/core/use_case/base_use_case.dart';
 

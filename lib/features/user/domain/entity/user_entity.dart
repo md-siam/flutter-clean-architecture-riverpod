@@ -1,6 +1,4 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'user_entity.freezed.dart';
+part of 'package:flutter_template/shared/base/base_entity.dart';
 
 @freezed
 abstract class UserEntity with _$UserEntity {

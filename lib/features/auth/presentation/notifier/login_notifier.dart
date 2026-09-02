@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_template/core/error/response_error.dart';
 import 'package:flutter_template/core/injector/injected_providers.dart';
 import 'package:flutter_template/core/state_status/base_status.dart';
-import 'package:flutter_template/features/auth/domain/entity/login_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 
 part 'login_notifier.freezed.dart';
 part 'login_notifier.g.dart';

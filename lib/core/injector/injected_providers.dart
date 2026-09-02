@@ -74,7 +74,9 @@ Dio unauthenticatedDio(Ref ref) => _createBaseDio();
 @Riverpod(keepAlive: true)
 Dio authenticatedDio(Ref ref) {
   final dio = _createBaseDio();
-  dio.interceptors.add(AuthInterceptor(ref.watch(secureStorageServiceProvider)));
+  dio.interceptors.add(
+    AuthInterceptor(ref.watch(secureStorageServiceProvider)),
+  );
   return dio;
 }
 

@@ -1,5 +1,5 @@
 import 'package:flutter_template/features/auth/data/data_source/auth_data_source.dart';
-import 'package:flutter_template/features/auth/data/models/login_request_model.dart';
+import 'package:flutter_template/shared/base/base_request.dart';
 
 class AuthMockDataSource implements AuthDataSource {
   @override

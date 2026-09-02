@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutter_template/core/state_status/base_status.dart';
-import 'package:flutter_template/features/user/domain/entity/user_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 
 part 'user_state.freezed.dart';
 
