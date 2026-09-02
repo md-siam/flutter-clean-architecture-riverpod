@@ -11,6 +11,7 @@ import 'package:flutter_template/l10n/l10n.dart';
 import 'package:flutter_template/shared/route/app_router.gr.dart';
 import 'package:flutter_template/shared/theme/base/theme_extension.dart';
 import 'package:flutter_template/shared/widgets/app_bar/widgets.dart';
+import 'package:flutter_template/shared/widgets/dashboard_drawer/drawer_menu_button.dart';
 import 'package:gap/gap.dart';
 
 class SettingsLandscapeView extends ConsumerWidget {
@@ -23,7 +24,10 @@ class SettingsLandscapeView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: theme.background,
-      appBar: CustomAppBar(title: l10n.settingsTitle),
+      appBar: CustomAppBar(
+        title: l10n.settingsTitle,
+        leading: const DrawerMenuButton(),
+      ),
 
       body: SafeArea(
         child: ListView(
