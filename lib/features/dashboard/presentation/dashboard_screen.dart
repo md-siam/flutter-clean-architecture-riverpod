@@ -1,8 +1,8 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_template/shared/route/app_router.gr.dart';
 import 'package:flutter_template/features/dashboard/presentation/dashboard_landscape_view.dart';
 import 'package:flutter_template/features/dashboard/presentation/dashboard_portrait_view.dart';
+import 'package:flutter_template/shared/route/app_router.gr.dart';
 import 'package:flutter_template/shared/widgets/widgets.dart';
 
 @RoutePage()
@@ -37,6 +37,11 @@ class _ResponsiveDashboard extends Screen {
 
   @override
   Widget buildMobileLandscapeView(BuildContext context) {
+    return DashboardLandscape(child: child);
+  }
+
+  @override
+  Widget buildTabletView(BuildContext context) {
     return DashboardLandscape(child: child);
   }
 }
