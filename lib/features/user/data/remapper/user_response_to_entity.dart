@@ -1,5 +1,5 @@
-import 'package:flutter_template/features/user/data/models/user_response_model.dart';
-import 'package:flutter_template/features/user/domain/entity/user_entity.dart';
+import 'package:flutter_template/shared/base/base_response.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 
 extension UserResponseMapper on List<UserResponseModel> {
   /// Maps a list of UserResponseModel to a list of UserEntity

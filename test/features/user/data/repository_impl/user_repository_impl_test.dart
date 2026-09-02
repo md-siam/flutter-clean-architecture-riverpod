@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter_template/core/data/factory/data_source_factory.dart';
 import 'package:flutter_template/features/user/data/data_source/user_data_source.dart';
-import 'package:flutter_template/features/user/data/models/user_response_model.dart';
+import 'package:flutter_template/shared/base/base_response.dart';
 import 'package:flutter_template/features/user/data/repository_impl/user_repository_impl.dart';
 
 class MockDataSourceFactory extends Mock implements DataSourceFactory {}

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:flutter_template/features/auth/domain/entity/login_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 import 'package:flutter_template/features/auth/domain/repository/auth_repository.dart';
 import 'package:flutter_template/features/auth/domain/use_cases/login_use_case.dart';
 

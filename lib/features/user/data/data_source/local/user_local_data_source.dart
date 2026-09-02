@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_template/features/user/data/models/user_response_model.dart';
+import 'package:flutter_template/shared/base/base_response.dart';
 import 'package:flutter_template/features/user/data/remapper/user_response_to_entity.dart';
-import 'package:flutter_template/features/user/domain/entity/user_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 
 abstract class UserLocalDataSource {
   Future<List<UserEntity>> getUserList();

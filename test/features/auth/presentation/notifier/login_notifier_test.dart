@@ -4,7 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter_template/core/error/response_error.dart';
 import 'package:flutter_template/core/injector/injected_providers.dart';
-import 'package:flutter_template/features/auth/domain/entity/login_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 import 'package:flutter_template/features/auth/domain/use_cases/login_use_case.dart';
 import 'package:flutter_template/features/auth/presentation/notifier/login_notifier.dart';
 

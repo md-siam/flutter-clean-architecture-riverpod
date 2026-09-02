@@ -3,9 +3,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:flutter_template/core/helper/secure_storage_service.dart';
 import 'package:flutter_template/features/auth/data/data_source/auth_data_source.dart';
 import 'package:flutter_template/core/data/factory/data_source_factory.dart';
-import 'package:flutter_template/features/auth/data/models/login_request_model.dart';
+import 'package:flutter_template/shared/base/base_request.dart';
 import 'package:flutter_template/features/auth/data/repository_impl/auth_repository_impl.dart';
-import 'package:flutter_template/features/auth/domain/entity/login_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 
 class MockDataSourceFactory extends Mock implements DataSourceFactory {}
 

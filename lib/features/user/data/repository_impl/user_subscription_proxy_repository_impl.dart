@@ -1,4 +1,4 @@
-import 'package:flutter_template/features/user/domain/entity/user_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 import 'package:flutter_template/features/user/domain/exceptions/subscription_required_exception.dart';
 import 'package:flutter_template/features/user/domain/repository/subscription_repository.dart';
 import 'package:flutter_template/features/user/domain/repository/user_repository.dart';

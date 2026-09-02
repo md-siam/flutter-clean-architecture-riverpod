@@ -90,15 +90,15 @@ mkdir -p "$DOMAIN_ENTITY_DIR" "$DOMAIN_REPO_DIR" "$DOMAIN_USECASE_DIR"
 mkdir -p "$DATA_MODEL_DIR" "$DATA_REPO_IMPL_DIR" "$DATA_REMAPPER_DIR" "$DATA_DS_DIR/remote" "$DATA_DS_DIR/local"
 mkdir -p "$NOTIFIER_DIR"
 mkdir -p "$PRESENTATION_DIR" "$COMPONENTS_DIR"
+mkdir -p lib/shared/base
 
 # ---------------------------
-# Domain Entity — standalone freezed file (own part directive), not a `part
-# of` a shared aggregator. Each feature's entities are self-contained.
+# Domain Entity — `part of` the shared lib/shared/base/base_entity.dart
+# aggregator, so freezed emits one base_entity.freezed.dart there instead of
+# a generated file per feature. See lib/shared/base/base_entity.dart.
 # ---------------------------
 cat <<EOF > "$DOMAIN_ENTITY_FILE"
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part '${FEATURE_SNAKE}_entity.freezed.dart';
+part of '$PKG/shared/base/base_entity.dart';
 
 @freezed
 abstract class ${ENTITY_CAMEL}Entity with _\$${ENTITY_CAMEL}Entity {
@@ -110,10 +110,27 @@ abstract class ${ENTITY_CAMEL}Entity with _\$${ENTITY_CAMEL}Entity {
 EOF
 
 # ---------------------------
+# Wire the entity into the shared base_entity.dart aggregator
+# ---------------------------
+BASE_ENTITY_FILE="lib/shared/base/base_entity.dart"
+if [ ! -f "$BASE_ENTITY_FILE" ]; then
+  cat <<EOF > "$BASE_ENTITY_FILE"
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'base_entity.freezed.dart';
+EOF
+fi
+ENTITY_PART_LINE="part '$PKG/features/$FEATURE_SNAKE/domain/entity/${FEATURE_SNAKE}_entity.dart';"
+if ! grep -Fxq "$ENTITY_PART_LINE" "$BASE_ENTITY_FILE"; then
+  insert_before "part 'base_entity\\.freezed\\.dart';" "$ENTITY_PART_LINE" "$BASE_ENTITY_FILE"
+  echo "Added $ENTITY_PART_LINE to base_entity.dart"
+fi
+
+# ---------------------------
 # Domain Repository
 # ---------------------------
 cat <<EOF > "$DOMAIN_REPO_FILE"
-import '$PKG/features/$FEATURE_SNAKE/domain/entity/${FEATURE_SNAKE}_entity.dart';
+import '$PKG/shared/base/base_entity.dart';
 
 abstract class ${ENTITY_CAMEL}Repository {
   Future<List<${ENTITY_CAMEL}Entity>> getAll();
@@ -125,7 +142,7 @@ EOF
 # Domain UseCase
 # ---------------------------
 cat <<EOF > "$DOMAIN_USECASE_FILE"
-import '$PKG/features/$FEATURE_SNAKE/domain/entity/${FEATURE_SNAKE}_entity.dart';
+import '$PKG/shared/base/base_entity.dart';
 import '$PKG/features/$FEATURE_SNAKE/domain/repository/${FEATURE_SNAKE}_repository.dart';
 
 class Get${ENTITY_CAMEL}UseCase {
@@ -140,13 +157,12 @@ class Get${ENTITY_CAMEL}UseCase {
 EOF
 
 # ---------------------------
-# Data Model (Freezed) — standalone, own freezed + json part directives.
+# Data Model (Freezed) — `part of` the shared lib/shared/base/base_response.dart
+# aggregator, so json_serializable/freezed emit one pair of generated files
+# there instead of one per feature. See lib/shared/base/base_response.dart.
 # ---------------------------
 cat <<EOF > "$DATA_MODEL_FILE"
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part '${FEATURE_SNAKE}_model.freezed.dart';
-part '${FEATURE_SNAKE}_model.g.dart';
+part of '$PKG/shared/base/base_response.dart';
 
 @freezed
 abstract class ${ENTITY_CAMEL}ResponseModel with _\$${ENTITY_CAMEL}ResponseModel {
@@ -162,13 +178,31 @@ abstract class ${ENTITY_CAMEL}ResponseModel with _\$${ENTITY_CAMEL}ResponseModel
 EOF
 
 # ---------------------------
+# Wire the model into the shared base_response.dart aggregator
+# ---------------------------
+BASE_RESPONSE_FILE="lib/shared/base/base_response.dart"
+if [ ! -f "$BASE_RESPONSE_FILE" ]; then
+  cat <<EOF > "$BASE_RESPONSE_FILE"
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'base_response.freezed.dart';
+part 'base_response.g.dart';
+EOF
+fi
+MODEL_PART_LINE="part '$PKG/features/$FEATURE_SNAKE/data/models/${FEATURE_SNAKE}_model.dart';"
+if ! grep -Fxq "$MODEL_PART_LINE" "$BASE_RESPONSE_FILE"; then
+  insert_before "part 'base_response\\.freezed\\.dart';" "$MODEL_PART_LINE" "$BASE_RESPONSE_FILE"
+  echo "Added $MODEL_PART_LINE to base_response.dart"
+fi
+
+# ---------------------------
 # Repository Implementation
 # ---------------------------
 cat <<EOF > "$DATA_REPO_IMPL_FILE"
 import '$PKG/features/$FEATURE_SNAKE/data/data_source/local/${FEATURE_SNAKE}_local_data_source.dart';
 import '$PKG/features/$FEATURE_SNAKE/data/data_source/remote/${FEATURE_SNAKE}_remote_data_source.dart';
 import '$PKG/features/$FEATURE_SNAKE/data/remapper/${FEATURE_SNAKE}_remapper.dart';
-import '$PKG/features/$FEATURE_SNAKE/domain/entity/${FEATURE_SNAKE}_entity.dart';
+import '$PKG/shared/base/base_entity.dart';
 import '$PKG/features/$FEATURE_SNAKE/domain/repository/${FEATURE_SNAKE}_repository.dart';
 
 class ${ENTITY_CAMEL}RepositoryImpl implements ${ENTITY_CAMEL}Repository {
@@ -196,8 +230,8 @@ EOF
 # Remapper
 # ---------------------------
 cat <<EOF > "$DATA_REMAPPER_FILE"
-import '$PKG/features/$FEATURE_SNAKE/data/models/${FEATURE_SNAKE}_model.dart';
-import '$PKG/features/$FEATURE_SNAKE/domain/entity/${FEATURE_SNAKE}_entity.dart';
+import '$PKG/shared/base/base_response.dart';
+import '$PKG/shared/base/base_entity.dart';
 
 extension ${ENTITY_CAMEL}Mapper on ${ENTITY_CAMEL}ResponseModel {
   ${ENTITY_CAMEL}Entity toEntity() => ${ENTITY_CAMEL}Entity(id: id, title: title);
@@ -214,7 +248,7 @@ EOF
 cat <<EOF > "$DATA_REMOTE_DS_FILE"
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
-import '$PKG/features/$FEATURE_SNAKE/data/models/${FEATURE_SNAKE}_model.dart';
+import '$PKG/shared/base/base_response.dart';
 part '${FEATURE_SNAKE}_remote_data_source.g.dart';
 
 @RestApi()
@@ -230,7 +264,7 @@ EOF
 # Local Data Source
 # ---------------------------
 cat <<EOF > "$DATA_LOCAL_DS_FILE"
-import '$PKG/features/$FEATURE_SNAKE/data/models/${FEATURE_SNAKE}_model.dart';
+import '$PKG/shared/base/base_response.dart';
 
 class ${ENTITY_CAMEL}LocalDataSource {
   Future<List<${ENTITY_CAMEL}ResponseModel>> fetchCachedData() async {
@@ -327,7 +361,7 @@ EOF
 cat <<EOF > "$STATE_FILE"
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '$PKG/core/state_status/base_status.dart';
-import '$PKG/features/$FEATURE_SNAKE/domain/entity/${FEATURE_SNAKE}_entity.dart';
+import '$PKG/shared/base/base_entity.dart';
 
 part '${FEATURE_SNAKE}_state.freezed.dart';
 
@@ -473,7 +507,7 @@ EOF
 # ---------------------------
 cat <<EOF > "$LIST_VIEW_FILE"
 import 'package:flutter/material.dart';
-import '$PKG/features/$FEATURE_SNAKE/domain/entity/${FEATURE_SNAKE}_entity.dart';
+import '$PKG/shared/base/base_entity.dart';
 
 class ${ENTITY_CAMEL}ListView extends StatelessWidget {
   final List<${ENTITY_CAMEL}Entity> items;

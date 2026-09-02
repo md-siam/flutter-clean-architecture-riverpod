@@ -1,4 +1,4 @@
-import 'package:flutter_template/features/user/domain/entity/user_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 import 'package:flutter_template/features/user/domain/repository/user_repository.dart';
 import 'package:flutter_template/core/use_case/base_use_case.dart';
 

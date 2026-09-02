@@ -4,7 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter_template/core/error/response_error.dart';
 import 'package:flutter_template/core/injector/injected_providers.dart';
-import 'package:flutter_template/features/user/domain/entity/user_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 import 'package:flutter_template/features/user/domain/exceptions/subscription_required_exception.dart';
 import 'package:flutter_template/features/user/domain/use_cases/get_subscription_status_use_case.dart';
 import 'package:flutter_template/features/user/domain/use_cases/get_user_list_use_case.dart';

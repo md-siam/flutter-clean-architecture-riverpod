@@ -1,5 +1,5 @@
 import 'package:flutter_template/features/user/data/data_source/local/user_local_data_source.dart';
-import 'package:flutter_template/features/user/domain/entity/user_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 import 'package:flutter_template/features/user/domain/repository/user_repository.dart';
 
 /// Decorator around a remote-backed [UserRepository]: cache-first reads,

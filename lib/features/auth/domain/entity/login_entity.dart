@@ -1,6 +1,4 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
-part 'login_entity.freezed.dart';
+part of 'package:flutter_template/shared/base/base_entity.dart';
 
 @freezed
 abstract class LoginEntity with _$LoginEntity {

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:flutter_template/features/user/data/data_source/user_data_source.dart';
-import 'package:flutter_template/features/user/data/models/user_response_model.dart';
+import 'package:flutter_template/shared/base/base_response.dart';
 
 part 'user_remote_data_source.g.dart';
 

@@ -1,7 +1,7 @@
 import 'package:flutter_template/core/helper/secure_storage_service.dart';
 import 'package:flutter_template/core/data/factory/data_source_factory.dart';
 import 'package:flutter_template/features/auth/data/remapper/login_entity_to_request.dart';
-import 'package:flutter_template/features/auth/domain/entity/login_entity.dart';
+import 'package:flutter_template/shared/base/base_entity.dart';
 import 'package:flutter_template/features/auth/domain/repository/auth_repository.dart';
 
 class AuthRepositoryImpl extends AuthRepository {
