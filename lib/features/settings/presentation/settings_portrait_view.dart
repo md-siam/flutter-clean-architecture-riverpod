@@ -6,10 +6,11 @@ import 'package:flutter_template/core/constants/app_constant.dart';
 import 'package:flutter_template/core/injector/injected_providers.dart';
 import 'package:flutter_template/l10n/l10n.dart';
 import 'package:flutter_template/shared/route/app_router.gr.dart';
-import 'package:flutter_template/features/user/presentation/components/theme_drop_down_button.dart';
 import 'package:flutter_template/features/settings/presentation/components/language_drop_down_button.dart';
+import 'package:flutter_template/features/settings/presentation/components/settings_section.dart';
+import 'package:flutter_template/features/settings/presentation/components/settings_tile.dart';
+import 'package:flutter_template/features/user/presentation/components/theme_drop_down_button.dart';
 import 'package:flutter_template/shared/theme/base/theme_extension.dart';
-import 'package:flutter_template/shared/theme/text/app_text.dart';
 import 'package:flutter_template/shared/widgets/app_bar/widgets.dart';
 
 class SettingsPortraitView extends ConsumerWidget {
@@ -33,15 +34,15 @@ class SettingsPortraitView extends ConsumerWidget {
           MediaQuery.of(context).padding.bottom + 90,
         ),
         children: [
-          _SettingsSection(
+          SettingsSection(
             title: l10n.settingsAppearance,
             children: [
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.palette_outlined,
                 title: l10n.settingsTheme,
                 trailing: const ThemeDropDownButton(),
               ),
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.language_outlined,
                 title: l10n.settingsLanguage,
                 trailing: const LanguageDropDownButton(),
@@ -49,10 +50,10 @@ class SettingsPortraitView extends ConsumerWidget {
             ],
           ),
           Gap(AppConstant.verticalGap20),
-          _SettingsSection(
+          SettingsSection(
             title: l10n.settingsAccount,
             children: [
-              _SettingsTile(
+              SettingsTile(
                 icon: Icons.logout_rounded,
                 iconColor: theme.error,
                 title: l10n.logout,
@@ -69,102 +70,6 @@ class SettingsPortraitView extends ConsumerWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// A titled group of setting rows wrapped in a bordered card.
-class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.colors;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.only(
-            left: AppConstant.horizontalGap4,
-            bottom: AppConstant.verticalGap8,
-          ),
-          child: AppText.titleSmall(
-            title,
-            color: theme.onSurface.withAlpha(150),
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: theme.surface,
-            borderRadius: BorderRadius.circular(AppConstant.borderRadius12),
-            border: Border.all(color: theme.border.withAlpha(128)),
-          ),
-          child: Column(children: children),
-        ),
-      ],
-    );
-  }
-}
-
-/// A single settings row: leading icon, title/subtitle, optional trailing
-/// widget or tap handler.
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-    this.iconColor,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  final Color? iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = context.colors;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppConstant.borderRadius12),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppConstant.horizontalGap16,
-          vertical: AppConstant.verticalGap12,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: iconColor ?? theme.primary, size: 22),
-            Gap(AppConstant.horizontalGap16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText.bodyLarge(title, fontWeight: FontWeight.w600),
-                  if (subtitle != null) ...[
-                    Gap(AppConstant.verticalGap4),
-                    AppText.bodySmall(
-                      subtitle!,
-                      color: theme.onSurface.withAlpha(150),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            ?trailing,
-          ],
-        ),
       ),
     );
   }
