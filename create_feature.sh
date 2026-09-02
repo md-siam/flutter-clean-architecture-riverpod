@@ -200,8 +200,8 @@ fi
 # ---------------------------
 cat <<EOF > "$DATA_REPO_IMPL_FILE"
 import '$PKG/features/$FEATURE_SNAKE/data/data_source/local/${FEATURE_SNAKE}_local_data_source.dart';
-import '$PKG/features/$FEATURE_SNAKE/data/data_source/remote/${FEATURE_SNAKE}_remote_data_source.dart';
 import '$PKG/features/$FEATURE_SNAKE/data/remapper/${FEATURE_SNAKE}_remapper.dart';
+import '$PKG/shared/base/base_data_source.dart';
 import '$PKG/shared/base/base_entity.dart';
 import '$PKG/features/$FEATURE_SNAKE/domain/repository/${FEATURE_SNAKE}_repository.dart';
 
@@ -243,13 +243,12 @@ extension ${ENTITY_CAMEL}ListMapper on List<${ENTITY_CAMEL}ResponseModel> {
 EOF
 
 # ---------------------------
-# Remote Data Source
+# Remote Data Source — `part of` the shared lib/shared/base/base_data_source.dart
+# aggregator, so retrofit emits one base_data_source.g.dart there instead of
+# one generated file per feature. See lib/shared/base/base_data_source.dart.
 # ---------------------------
 cat <<EOF > "$DATA_REMOTE_DS_FILE"
-import 'package:dio/dio.dart';
-import 'package:retrofit/retrofit.dart';
-import '$PKG/shared/base/base_response.dart';
-part '${FEATURE_SNAKE}_remote_data_source.g.dart';
+part of '$PKG/shared/base/base_data_source.dart';
 
 @RestApi()
 abstract class ${ENTITY_CAMEL}RemoteDataSource {
@@ -259,6 +258,28 @@ abstract class ${ENTITY_CAMEL}RemoteDataSource {
   Future<${ENTITY_CAMEL}ResponseModel> fetchData();
 }
 EOF
+
+# ---------------------------
+# Wire the remote data source into the shared base_data_source.dart aggregator
+# ---------------------------
+BASE_DATA_SOURCE_FILE="lib/shared/base/base_data_source.dart"
+if [ ! -f "$BASE_DATA_SOURCE_FILE" ]; then
+  cat <<EOF > "$BASE_DATA_SOURCE_FILE"
+import 'package:dio/dio.dart';
+import 'package:retrofit/retrofit.dart';
+import '$PKG/shared/base/base_response.dart';
+
+part 'base_data_source.g.dart';
+EOF
+fi
+DATA_SOURCE_PART_LINE="part '$PKG/features/$FEATURE_SNAKE/data/data_source/remote/${FEATURE_SNAKE}_remote_data_source.dart';"
+if ! grep -Fxq "$DATA_SOURCE_PART_LINE" "$BASE_DATA_SOURCE_FILE"; then
+  insert_before "part 'base_data_source\\.g\\.dart';" "$DATA_SOURCE_PART_LINE" "$BASE_DATA_SOURCE_FILE"
+  echo "Added $DATA_SOURCE_PART_LINE to base_data_source.dart"
+fi
+if ! grep -Fxq "import '$PKG/shared/base/base_response.dart';" "$BASE_DATA_SOURCE_FILE"; then
+  insert_before "^part 'base_data_source\\.g\\.dart';\$" "import '$PKG/shared/base/base_response.dart';" "$BASE_DATA_SOURCE_FILE"
+fi
 
 # ---------------------------
 # Local Data Source
@@ -287,10 +308,10 @@ INJECTED_PROVIDERS_FILE="lib/core/injector/injected_providers.dart"
 
 for IMPORT_LINE in \
   "import '$PKG/features/$FEATURE_SNAKE/data/data_source/local/${FEATURE_SNAKE}_local_data_source.dart';" \
-  "import '$PKG/features/$FEATURE_SNAKE/data/data_source/remote/${FEATURE_SNAKE}_remote_data_source.dart';" \
   "import '$PKG/features/$FEATURE_SNAKE/data/repository_impl/${FEATURE_SNAKE}_repository_impl.dart';" \
   "import '$PKG/features/$FEATURE_SNAKE/domain/repository/${FEATURE_SNAKE}_repository.dart';" \
-  "import '$PKG/features/$FEATURE_SNAKE/domain/use_cases/get_${FEATURE_SNAKE}_usecase.dart';"
+  "import '$PKG/features/$FEATURE_SNAKE/domain/use_cases/get_${FEATURE_SNAKE}_usecase.dart';" \
+  "import '$PKG/shared/base/base_data_source.dart';"
 do
   if ! grep -Fxq "$IMPORT_LINE" "$INJECTED_PROVIDERS_FILE"; then
     insert_before "^part 'injected_providers.g.dart';\$" "$IMPORT_LINE" "$INJECTED_PROVIDERS_FILE"

@@ -6,8 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_template/core/env/app_environment.dart';
 import 'package:flutter_template/core/env/env.dart';
 import 'package:flutter_template/core/helper/secure_storage_service.dart';
+import 'package:flutter_template/shared/base/base_data_source.dart';
 import 'package:flutter_template/features/auth/data/data_source/mock/auth_mock_data_source.dart';
-import 'package:flutter_template/features/auth/data/data_source/remote/auth_remote_data_source.dart';
 import 'package:flutter_template/core/interceptor/auth_interceptor.dart';
 import 'package:flutter_template/core/interceptor/backend_error_interceptor.dart';
 import 'package:flutter_template/core/data/factory/data_source_factory.dart';
@@ -16,7 +16,6 @@ import 'package:flutter_template/core/data/factory/remote_data_source_factory.da
 import 'package:flutter_template/features/user/data/data_source/local/subscription_local_data_source.dart';
 import 'package:flutter_template/features/user/data/data_source/local/user_local_data_source.dart';
 import 'package:flutter_template/features/user/data/data_source/mock/user_mock_data_source.dart';
-import 'package:flutter_template/features/user/data/data_source/remote/user_remote_data_source.dart';
 import 'package:flutter_template/features/auth/data/repository_impl/auth_repository_impl.dart';
 import 'package:flutter_template/features/user/data/repository_impl/subscription_repository_impl.dart';
 import 'package:flutter_template/features/user/data/repository_impl/user_cache_repository_impl.dart';
