@@ -220,16 +220,25 @@ chmod +x ./setup.sh
 
 ## 7. Testing
 
-Unit tests live under `test/`, mirroring the `lib/` layer structure so each
-layer is verified in isolation by mocking the layer beneath it — exactly what
-the Clean Architecture boundaries are designed to enable.
+Unit tests live under `test/`, mirroring the `lib/` feature-first structure so
+each layer is verified in isolation by mocking the layer beneath it — exactly
+what the Clean Architecture boundaries are designed to enable.
 
 ```
 test/
-├── core/error/            # ResponseError mapping & hardening
-├── data/repository_impl/  # repositories (mocked DataSourceFactory + data sources)
-├── domain/use_cases/      # use cases (mocked repositories)
-└── presentation/          # notifiers (mocked use case providers)
+├── core/                          # cross-cutting: error mapping, device status, ...
+├── shared/                        # cross-cutting notifiers (theme, locale)
+└── features/
+    ├── auth/
+    │   ├── data/repository_impl/      # repositories (mocked DataSourceFactory + data sources)
+    │   ├── domain/use_cases/          # use cases (mocked repositories)
+    │   └── presentation/notifier/     # notifiers (mocked use case providers)
+    ├── user/
+    │   ├── data/repository_impl/
+    │   ├── domain/use_cases/
+    │   └── presentation/notifier/
+    └── dashboard/
+        └── presentation/notifier/
 ```
 
 The suite uses [`flutter_test`](https://docs.flutter.dev/testing) +
@@ -243,7 +252,7 @@ graph is touched — every collaborator is mocked.
 flutter test
 
 # A single file
-flutter test test/presentation/user_notifier_test.dart
+flutter test test/features/user/presentation/notifier/user_notifier_test.dart
 
 # By name
 flutter test --plain-name "maps response models to domain entities"

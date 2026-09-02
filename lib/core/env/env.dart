@@ -4,7 +4,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_template/presentation/app/app.dart';
+import 'package:flutter_template/shared/app/app.dart';
 
 import '../injector/injected_providers.dart';
 

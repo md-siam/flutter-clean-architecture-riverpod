@@ -31,10 +31,10 @@ Generated files (`*.g.dart`, `*.freezed.dart`, `*.gr.dart`, `assets.gen.dart`) a
 
 ### Testing
 ```bash
-flutter test                                                  # all
-flutter test test/presentation/user_notifier_test.dart        # single file
-flutter test --plain-name "maps response models to entities"  # by name
-flutter test --coverage                                       # writes coverage/lcov.info
+flutter test                                                            # all
+flutter test test/features/user/presentation/notifier/user_notifier_test.dart  # single file
+flutter test --plain-name "maps response models to entities"            # by name
+flutter test --coverage                                                 # writes coverage/lcov.info
 ```
 
 ### Lint
@@ -50,20 +50,24 @@ ARB source: `lib/l10n/arb/app_en.arb` (template) + `app_es.arb`. Generated into 
 
 ### Scaffold a new feature
 ```bash
-./create_feature.sh feature_name   # generates domain/data/presentation files following the layer conventions below
+./create_feature.sh feature_name   # generates a lib/features/<name>/{domain,data,presentation} slice following the conventions below
 ```
 
 ## Architecture
 
-Clean Architecture with a strict inward dependency rule. Four top-level directories under `lib/`:
+Clean Architecture, but organized **feature-first, layers-inside** rather than layer-first: each feature under `lib/features/` owns its own `domain/` → `data/` → `presentation/` slice, and the strict inward dependency rule (`presentation` → `domain` ← `data`) applies *within* that slice. Cross-feature/shared code lives outside `features/`:
 
-- **`domain/`** — business core, no Flutter/data dependencies. `entity/` (freezed models), `repository/` (abstract interfaces), `use_cases/` (one operation each, mixing in `BaseUseCase<Output>` or `BaseUseCaseWithParams<Output, Params>`).
-- **`data/`** — implements domain contracts. `repository_impl/` implement `domain/repository` interfaces; `data_source/` talk to APIs (Retrofit) or mocks; `models/` are request/response DTOs; `remapper/` are extensions mapping DTOs ↔ domain entities.
-- **`presentation/`** — UI via Riverpod. `app/`, `route/` (auto_route), `theme/`, `widgets/` (reusable), plus feature screens. Each feature has a `notifier/` folder: a `@riverpod` `Notifier` class emitting a freezed state wrapping a `BaseStatus`.
-- **`core/`** — cross-cutting: `injector/` (DI), `env/` (flavors), `state_status/` (`BaseStatus`), `error/` (`ResponseError`), `helper/`, `extensions/`, `constants/`.
+- **`lib/features/<name>/`** — one directory per feature (`auth`, `user`, `dashboard`, `settings`, `splash`, `architecture`, `widget_screen`). Not every feature needs every layer — `dashboard`/`settings`/`splash`/`architecture`/`widget_screen` are presentation-only shells with no domain/data of their own.
+  - **`domain/`** — business core, no Flutter/data dependencies. `entity/` (freezed models, one standalone file per entity — no shared aggregator file), `repository/` (abstract interfaces), `use_cases/` (one operation each, mixing in `BaseUseCase<Output>` or `BaseUseCaseWithParams<Output, Params>` from `core/use_case/`), `exceptions/` (feature-specific exceptions).
+  - **`data/`** — implements this feature's `domain/repository` interfaces. `repository_impl/`; `data_source/` (`remote/` Retrofit `@RestApi`, `mock/`, `local/`) talking to APIs/mocks/cache; `models/` request/response DTOs (own freezed/json parts); `remapper/` extensions mapping DTOs ↔ domain entities.
+  - **`presentation/`** — UI for this feature via Riverpod. A `notifier/` folder holds a `@riverpod` `Notifier` class emitting a freezed state wrapping a `BaseStatus`; `components/` holds feature-local widgets. The `user` feature's UI lives here as `home_screen.dart` etc. (home is the presentation of the user feature, not a separate feature).
+- **`lib/shared/`** — presentation infra used by *more than one* feature, with no business logic of its own: `app/` (root `App` widget), `route/` (auto_route config + generated router), `theme/`, `widgets/` (reusable, feature-agnostic components), `locale/`.
+- **`lib/core/`** — cross-cutting, non-UI: `injector/` (DI), `env/` (flavors), `state_status/` (`BaseStatus`), `error/` (`ResponseError`), `network/` (Dio interceptors), `data/factory/` (the cross-feature `DataSourceFactory` — see below), `use_case/` (`BaseUseCase` contracts), `helper/`, `extensions/`, `constants/`, `notifier/device_status/`.
+
+A feature's `domain`/`data`/`presentation` never import another feature's `domain`/`data`/`presentation` directly. The only code allowed to know about multiple features at once is the composition root (`core/injector/injected_providers.dart`) and genuinely cross-feature infrastructure explicitly placed in `core/` (e.g. `DataSourceFactory`, which spans `auth` and `user` data sources by design — see below).
 
 ### Dependency injection (riverpod_generator)
-- The whole app's dependency graph is plain `@Riverpod(keepAlive: true)` provider functions in [lib/core/injector/injected_providers.dart](lib/core/injector/injected_providers.dart) — one file, one provider per dependency, wired with `ref.watch`. There is no separate DI container or generated registration file; classes carry no DI annotations at all.
+- The whole app's dependency graph — across every feature — is plain `@Riverpod(keepAlive: true)` provider functions in [lib/core/injector/injected_providers.dart](lib/core/injector/injected_providers.dart) — one file, one provider per dependency, wired with `ref.watch`. There is no separate DI container or generated registration file; classes carry no DI annotations at all. This file is the one place in the app that is allowed to import across feature boundaries.
 - `keepAlive: true` makes a provider behave like a singleton (built once, reused for the app's lifetime) — the equivalent of get_it's old `@singleton`/`@lazySingleton`.
 - Flavor-conditional wiring (mock vs. remote data sources, cache-only vs. subscription-gated repository) is a plain `if (Env.shared.name == AppEnvironment.development)` branch inside the relevant provider — there's no annotation-based environment gating.
 - `SharedPreferences` is the one async dependency: it's resolved once in `Env.bootstrap` ([lib/core/env/env.dart](lib/core/env/env.dart)) and injected via `ProviderScope(overrides: [sharedPreferencesProvider.overrideWithValue(...)])`, so every other provider can stay synchronous.
@@ -71,12 +75,12 @@ Clean Architecture with a strict inward dependency rule. Four top-level director
 - Notifiers and widgets never construct dependencies themselves — they `ref.watch`/`ref.read` the provider from `injected_providers.dart`, which is also the seam tests override (see "Testing conventions" below).
 
 ### Flavor-based data mocking (key pattern)
-Data sources are obtained through an **Abstract Factory**, not injected directly, so flavor selects real vs. mocked data at DI time:
-- `DataSourceFactory` interface → `createUserDataSource()`, `createAuthDataSource()`.
+Data sources are obtained through an **Abstract Factory**, not injected directly, so flavor selects real vs. mocked data at DI time. This factory is deliberately cross-feature infrastructure, so it lives in `core/`, not inside `features/auth` or `features/user`:
+- `DataSourceFactory` interface ([lib/core/data/factory/data_source_factory.dart](lib/core/data/factory/data_source_factory.dart)) → `createUserDataSource()`, `createAuthDataSource()`.
 - `dataSourceFactoryProvider` in [lib/core/injector/injected_providers.dart](lib/core/injector/injected_providers.dart) returns a `MockDataSourceFactory` when `Env.shared.name == AppEnvironment.development` and a `RemoteDataSourceFactory` otherwise.
 - Repository impls take `DataSourceFactory` in their constructor and call `factory.createXDataSource()` — they never know whether data is mocked.
-- Each data source has an abstract interface (`user/user_data_source.dart`) plus `remote/` (Retrofit `@RestApi`) and `mock/` implementations.
-- **Consequence:** the `development` flavor runs fully offline against mock data. Adding a data source means: interface + `remote/` + `mock/` impls, then add a provider for each in `injected_providers.dart` and wire both into `dataSourceFactoryProvider`.
+- Each data source has an abstract interface (`features/user/data/data_source/user_data_source.dart`) plus `remote/` (Retrofit `@RestApi`) and `mock/` implementations, inside that feature's own `data/data_source/`.
+- **Consequence:** the `development` flavor runs fully offline against mock data. Adding a data source means: interface + `remote/` + `mock/` impls inside the feature's `data/data_source/`, then add a provider for each in `injected_providers.dart` and wire both into `dataSourceFactoryProvider`.
 
 Environment names live in one place: `AppEnvironment` ([lib/core/env/app_environment.dart](lib/core/env/app_environment.dart)) — read directly (`Env.shared.name == AppEnvironment.x`) by providers that branch per flavor, and set by config classes. Each flavor has a `main_<flavor>.dart` entry that instantiates its `Env` subclass ([lib/core/env/](lib/core/env/)), which sets `Env.shared` and bootstraps the app (resolve `SharedPreferences`, wrap in `ProviderScope` with an `AppProviderObserver`, `runApp`).
 
@@ -84,7 +88,7 @@ Environment names live in one place: `AppEnvironment` ([lib/core/env/app_environ
 Notifier states are freezed classes holding a `BaseStatus` (`loading` / `success` / `failure(ResponseError)`). Notifiers catch exceptions from use cases and emit `BaseStatus.failure(ResponseError.from(e))`. Backend errors flow through `BackendErrorInterceptor` → `ResponseError`.
 
 ## Testing conventions
-`test/` mirrors `lib/` layer structure; each layer is tested in isolation by mocking the layer directly beneath it (`mocktail`). No real network/storage/DI is touched. When using `any()` with a custom type, `registerFallbackValue(...)` once in `setUpAll`. See README §7 for full patterns.
+`test/` mirrors the `lib/` feature-first structure (`test/features/<name>/{domain,data,presentation}/...`, plus `test/core/` and `test/shared/` for cross-cutting code); each layer is tested in isolation by mocking the layer directly beneath it (`mocktail`). No real network/storage/DI is touched. When using `any()` with a custom type, `registerFallbackValue(...)` once in `setUpAll`. See README §7 for full patterns.
 
 ## Git conventions (enforced by hooks after `./setup.sh`)
 - **Branches:** `feat/`, `fix/`, `refactor/`, or `chore/` prefix (except `main`/`develop`/`master`).
