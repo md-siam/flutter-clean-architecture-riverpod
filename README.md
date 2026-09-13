@@ -86,7 +86,7 @@ abstract class UserRepository {
 Manages data-related operations, including storage and communication with external sources.
 
 **Data Source**
-Origins of data (e.g., APIs via Retrofit), implementing this feature's data source interface. The `@RestApi` class itself is `part of` the shared `shared/base/base_data_source.dart` aggregator rather than a standalone library — see the Architecture note in `CLAUDE.md`.
+Origins of data (e.g., APIs via Retrofit), implementing this feature's data source interface. The `@RestApi` class is a standalone file that `part`s its own generated `*_remote_data_source.g.dart` — see the Architecture note in `CLAUDE.md`.
 ```dart
 @RestApi()
 abstract class UserRemoteDataSource implements UserDataSource {

@@ -1,4 +1,7 @@
-part of 'package:flutter_template/shared/base/base_response.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'user_response_model.freezed.dart';
+part 'user_response_model.g.dart';
 
 @freezed
 abstract class UserResponseModel with _$UserResponseModel {
