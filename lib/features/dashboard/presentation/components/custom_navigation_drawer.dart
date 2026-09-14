@@ -34,34 +34,36 @@ class CustomNavigationDrawer extends StatelessWidget {
         right: false,
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: AppConstant.verticalGap16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              NavigationDrawerItem(
-                title: context.l10n.navHome,
-                onTap: () => onTap(0),
-                isSelected: currentIndex == 0,
-                icon: Icons.home_rounded,
-              ),
-              NavigationDrawerItem(
-                title: context.l10n.navWidgets,
-                onTap: () => onTap(1),
-                isSelected: currentIndex == 1,
-                icon: Icons.widgets_rounded,
-              ),
-              NavigationDrawerItem(
-                title: context.l10n.navArchitecture,
-                onTap: () => onTap(2),
-                isSelected: currentIndex == 2,
-                icon: Icons.account_tree_rounded,
-              ),
-              NavigationDrawerItem(
-                title: context.l10n.navSettings,
-                onTap: () => onTap(3),
-                isSelected: currentIndex == 3,
-                icon: Icons.settings_rounded,
-              ),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                NavigationDrawerItem(
+                  title: context.l10n.navHome,
+                  onTap: () => onTap(0),
+                  isSelected: currentIndex == 0,
+                  icon: Icons.home_rounded,
+                ),
+                NavigationDrawerItem(
+                  title: context.l10n.navWidgets,
+                  onTap: () => onTap(1),
+                  isSelected: currentIndex == 1,
+                  icon: Icons.widgets_rounded,
+                ),
+                NavigationDrawerItem(
+                  title: context.l10n.navArchitecture,
+                  onTap: () => onTap(2),
+                  isSelected: currentIndex == 2,
+                  icon: Icons.account_tree_rounded,
+                ),
+                NavigationDrawerItem(
+                  title: context.l10n.navSettings,
+                  onTap: () => onTap(3),
+                  isSelected: currentIndex == 3,
+                  icon: Icons.settings_rounded,
+                ),
+              ],
+            ),
           ),
         ),
       ),
