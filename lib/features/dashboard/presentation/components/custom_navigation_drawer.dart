@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_template/core/constants/app_constant.dart';
 import 'package:flutter_template/l10n/l10n.dart';
@@ -25,19 +26,24 @@ class CustomNavigationDrawer extends StatelessWidget {
     return Drawer(
       width: 200,
       backgroundColor: theme.surface,
-      // Only guard against the status bar / home indicator. Also
-      // reserving the notch/Dynamic-Island side inset here would eat a
-      // big chunk of an already-narrow 200px drawer — that side of the
-      // screen isn't near the drawer's own content anyway.
       child: SafeArea(
-        left: false,
+        top: false,
+        bottom: false,
         right: false,
+        left: defaultTargetPlatform == TargetPlatform.android,
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: AppConstant.verticalGap16),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: Icon(Icons.close, color: theme.error, size: 20),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
                 NavigationDrawerItem(
                   title: context.l10n.navHome,
                   onTap: () => onTap(0),
